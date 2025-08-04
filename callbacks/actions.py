@@ -15,18 +15,20 @@ class Action:
     logger: binaryninja.Logger = None
 
     def __init__(self):
-        self.logger = binaryninja.log.Logger(0, f"{const.plugin_name}.{self.short_name}")
+        self.logger = binaryninja.log.Logger(
+            0, f"{const.plugin_name}.{self.short_name}"
+        )
 
     @property
     def short_name(self):
-        '''
+        """
         Mostly for logging purposes.
-        '''
+        """
         return self.__class__.__name__
-    
+
     def register(self):
         raise NotImplementedError
-    
+
     def unregister(self):
         raise NotImplementedError
 
@@ -43,16 +45,19 @@ class PyToolsPluginCommand(Action):
         PluginCommandType.MediumLevelILInstructionPluginCommand: PluginCommand.register_for_medium_level_il_instruction,
         PluginCommandType.HighLevelILFunctionPluginCommand: PluginCommand.register_for_high_level_il_function,
         PluginCommandType.HighLevelILInstructionPluginCommand: PluginCommand.register_for_high_level_il_instruction,
-        PluginCommandType.ProjectPluginCommand: PluginCommand.register_for_project
+        PluginCommandType.ProjectPluginCommand: PluginCommand.register_for_project,
     }
     type: PluginCommandType = None
 
     def __init__(self):
         super().__init__()
 
-        assert self.full_name and self.description, "Fullname and description must be filled"
+        assert (
+            self.full_name and self.description
+        ), "Fullname and description must be filled"
         assert self.type is not None, "plugin command type must be set"
 
+    # fmt: off
     @overload # register
     def activate(self, bv: binaryninja.BinaryView): raise NotImplementedError
     @overload # register_for_address
@@ -73,7 +78,9 @@ class PyToolsPluginCommand(Action):
     def activate(self, bv: binaryninja.BinaryView, function: binaryninja.LowLevelILInstruction): raise NotImplementedError
     @overload # register_for_range
     def activate(self, bv: binaryninja.BinaryView, begin: int, end: int): raise NotImplementedError
+    # fmt: on
 
+    # fmt: off
     @overload # register
     def is_valid(self, bv: binaryninja.BinaryView) -> bool: raise NotImplementedError
     @overload # register_for_address
@@ -94,38 +101,46 @@ class PyToolsPluginCommand(Action):
     def is_valid(self, bv: binaryninja.BinaryView, function: binaryninja.HighLevelILFunction) -> bool: raise NotImplementedError
     @overload # register_for_high_level_il_instruction
     def is_valid(self, bv: binaryninja.BinaryView, function: binaryninja.HighLevelILInstruction) -> bool: raise NotImplementedError
+    # fmt: on
 
     def register(self):
         register = self.type_to_handler[self.type]
         register(
-            f"{const.plugin_name}\\{self.full_name}", self.description,
-            self.activate, self.is_valid
+            f"{const.plugin_name}\\{self.full_name}",
+            self.description,
+            self.activate,
+            self.is_valid,
         )
 
 
 class PyToolsUIAction(Action):
     def __init__(self):
         super().__init__()
-        assert self.full_name and self.description, "Fullname and description must be filled"
+        assert (
+            self.full_name and self.description
+        ), "Fullname and description must be filled"
 
+    # fmt: off
     @overload
     def activate(self): raise NotImplementedError
     @overload
     def activate(self, context: binaryninjaui.UIActionContext): raise NotImplementedError
-    
+    # fmt: on
+
+    # fmt: off
     @overload
     def is_valid(self) -> bool: return True
     @overload
     def is_valid(self, context: binaryninjaui.UIActionContext) -> bool: return True
-    
+    # fmt: on
+
     def register(self):
         binaryninjaui.UIAction.registerAction(
-            f"{const.plugin_name}\\{self.full_name}",
-            self.desired_hotkey
+            f"{const.plugin_name}\\{self.full_name}", self.desired_hotkey
         )
         binaryninjaui.UIActionHandler.globalActions().bindAction(
             f"{const.plugin_name}\\{self.full_name}",
-            binaryninjaui.UIAction(self.activate, self.is_valid)
+            binaryninjaui.UIAction(self.activate, self.is_valid),
         )
 
 
@@ -133,7 +148,9 @@ class ActionManager:
     def __init__(self):
         self.__actions: list[Action] = list()
 
-        self.logger: binaryninja.Logger = binaryninja.log.Logger(0, f"{const.plugin_name}.{self.__class__.__name__}")
+        self.logger: binaryninja.Logger = binaryninja.log.Logger(
+            0, f"{const.plugin_name}.{self.__class__.__name__}"
+        )
 
     def register(self, action: Action):
         self.logger.log_info("Registering %s action" % (action.short_name))
@@ -145,12 +162,18 @@ class ActionManager:
             )
             return
 
+        if isinstance(action, PyToolsPluginCommand) and action.desired_hotkey:
+            self.logger.log_warn(
+                f"Desired hotkey ({action.desired_hotkey}) for {action.short_name} is set, "
+                "but setting default hotkey currently unavailable for PluginCommands, ignored"
+            )
+
         self.__actions.append(action)
         action.register()
 
     def finalize(self):
         for action in self.__actions:
             action.unregister()
-        
+
 
 bn_action_manager = ActionManager()

@@ -8,6 +8,7 @@ BnPyTools
     * [Create virtual table](#create-virtual-table)
     * [Resolve virtual call](#resolve-follow-virtual-call)
     * [Open file location](#open-file-location)
+    * [Show switch cases](#show-cases-of-switch)
     * [Show exported symbols](#show-exports)
 
 ## About
@@ -41,6 +42,11 @@ Open file directory in system file-explorer.
 > Currently implemented only for macOS.
 
 ![](images/open_file_location.gif)
+
+### Show cases of switch
+Show all the case-expressions of the switch-expresion
+![](images/show_cases_of_switch.gif)
+
 
 ### Show exported symbols
 Simple widget to quickly go through exported symbols of the binary, with searching and sorting features.
