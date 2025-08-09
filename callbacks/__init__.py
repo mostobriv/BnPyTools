@@ -1,4 +1,8 @@
 # from .actions import *
+from .bnplugintools import init_plugin_tools
+
+init_plugin_tools("BnPyTools")
+
 
 from . import show_exports
 from . import constantine

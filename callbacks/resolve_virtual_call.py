@@ -2,7 +2,7 @@ import binaryninja
 from binaryninja import HighLevelILOperation
 import binaryninjaui
 
-from .actions import PyToolsUIAction, bn_action_manager
+from .bnplugintools import PyToolsUIAction, get_action_manager
 
 from ..core import virtualtable
 from ..core import utils
@@ -14,17 +14,17 @@ def is_function_pointer_type(t: binaryninja.Type) -> bool:
 	assert isinstance(t, binaryninja.Type)
 	if not isinstance(t, binaryninja.types.PointerType):
 		return False
-	
+
 	return isinstance(t.target, binaryninja.types.FunctionType)
 
 
 # 1 - get the name and try to extract suffix with address
 # 2 - else query the metadata storage
 class ResolveVirtualCall(PyToolsUIAction):
-	full_name = "Resolve virtual call"
+	display_name = "Resolve virtual call"
 	description = "Trying to resolve virtual call and jump to callee address"
 	desired_hotkey = "Shift+F"
-	
+
 	def __init__(self):
 		super().__init__()
 
@@ -42,16 +42,22 @@ class ResolveVirtualCall(PyToolsUIAction):
 					return
 
 				vtable_candidate_type = expr.src
-				vtable_type_name = vtable_candidate_type.expr_type.target.registered_name.name.name[0]
+				vtable_type_name = vtable_candidate_type.expr_type.target.registered_name.name.name[
+					0
+				]
 				vtable_address = virtualtable.extract_address_from_name(vtable_type_name)
 				if vtable_address is None:
 					# TODO: make the fallback to the second mechanic of address extraction
-					self.logger.log_warn("Failed to find address-suffix of %s" % (repr(vtable_type_name)))
+					self.logger.log_warn(
+						"Failed to find address-suffix of %s" % (repr(vtable_type_name))
+					)
 					return
-				
+
 				member_function_offset = expr.offset
 				target_address = bv.read_pointer(vtable_address + member_function_offset)
-				assert bv.get_function_at(target_address) is not None, "Failed to get function at the address: %#x" % (target_address)
+				assert bv.get_function_at(target_address) is not None, (
+					"Failed to get function at the address: %#x" % (target_address)
+				)
 				bv.offset = target_address
 
 			case HighLevelILOperation.HLIL_STRUCT_FIELD:
@@ -63,27 +69,33 @@ class ResolveVirtualCall(PyToolsUIAction):
 	def is_valid(self, context):
 		if context is None:
 			return False
-		
+
 		if not isinstance(context.widget, binaryninjaui.LinearView):
 			return False
-		
+
 		token_state = context.token
 		bv = context.binaryView
 
 		if token_state.focused == False:
 			return False
-		
-		if utils.get_il_view_type(context) != binaryninja.FunctionGraphType.HighLevelILFunctionGraph:
+
+		if (
+			utils.get_il_view_type(context)
+			!= binaryninja.FunctionGraphType.HighLevelILFunctionGraph
+		):
 			return False
-		
+
 		expr_index = token_state.token.il_expr_index
-		# There is realy no named const for this, just uint64(-1) 
-		if expr_index == 0xffffffffffffffff:
+		# There is realy no named const for this, just uint64(-1)
+		if expr_index == 0xFFFFFFFFFFFFFFFF:
 			return False
-		
+
 		expr = context.highLevelILFunction.get_expr(expr_index)
 
-		return expr.operation in (HighLevelILOperation.HLIL_DEREF_FIELD, HighLevelILOperation.HLIL_STRUCT_FIELD)
+		return expr.operation in (
+			HighLevelILOperation.HLIL_DEREF_FIELD,
+			HighLevelILOperation.HLIL_STRUCT_FIELD,
+		)
 
 
-bn_action_manager.register(ResolveVirtualCall())
+get_action_manager().register(ResolveVirtualCall())
