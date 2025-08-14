@@ -65,6 +65,10 @@ class ShowExports(PyToolsUIAction):
 	def is_valid(self, context):
 		if context is None or context.context is None:
 			return False
+
+		if context.binaryView is None:
+			return False
+
 		return True
 
 

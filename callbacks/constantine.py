@@ -78,6 +78,7 @@ class Constantine(PyToolsUIAction):
 
 		return
 
+	@PyToolsUIAction.add_to_context_menu
 	def is_valid(self, context):
 		if context is None:
 			return False

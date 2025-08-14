@@ -66,6 +66,7 @@ class ResolveVirtualCall(PyToolsUIAction):
 			case _:
 				raise ValueError("How did we get here?")
 
+	@PyToolsUIAction.add_to_context_menu
 	def is_valid(self, context):
 		if context is None:
 			return False
