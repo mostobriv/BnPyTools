@@ -66,18 +66,14 @@ class ResolveVirtualCall(PyToolsUIAction):
 			case _:
 				raise ValueError("How did we get here?")
 
-	@PyToolsUIAction.add_to_context_menu
+	@PyToolsUIAction.do_basic_context_checks
 	def is_valid(self, context):
-		if context is None:
-			return False
-
 		if not isinstance(context.widget, binaryninjaui.LinearView):
 			return False
 
 		token_state = context.token
-		bv = context.binaryView
 
-		if token_state.focused == False:
+		if not token_state.focused:
 			return False
 
 		if (

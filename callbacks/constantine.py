@@ -78,15 +78,9 @@ class Constantine(PyToolsUIAction):
 
 		return
 
-	@PyToolsUIAction.add_to_context_menu
+	@PyToolsUIAction.do_basic_context_checks
 	def is_valid(self, context):
-		if context is None:
-			return False
-
-		if not isinstance(context.widget, LinearView):
-			return False
-
-		return True
+		return isinstance(context.widget, LinearView)
 
 
 get_action_manager().register(Constantine())

@@ -11,3 +11,4 @@ from . import show_switch_cases
 from . import remove_rettype
 from . import create_virtual_table
 from . import resolve_virtual_call
+from . import reset_function_highlight
