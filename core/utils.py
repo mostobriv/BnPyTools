@@ -22,32 +22,29 @@ def get_il_view_type(context: binaryninjaui.UIActionContext) -> FunctionGraphTyp
 
 def get_current_il_function(
 	context: binaryninjaui.UIActionContext,
-) -> binaryninja.Function | binaryninja.ILFunctionType | None:
+) -> binaryninja.ILFunctionType | None:
 	match get_il_view_type(context):
 		case (
 			FunctionGraphType.HighLevelILFunctionGraph
 			| FunctionGraphType.HighLevelILSSAFormFunctionGraph
 			| FunctionGraphType.HighLevelLanguageRepresentationFunctionGraph
 		):
-			function = context.highLevelILFunction
+			return context.highLevelILFunction
 		case (
 			FunctionGraphType.MediumLevelILFunctionGraph
 			| FunctionGraphType.MediumLevelILSSAFormFunctionGraph
 			| FunctionGraphType.MappedMediumLevelILFunctionGraph
 			| FunctionGraphType.MappedMediumLevelILSSAFormFunctionGraph
 		):
-			function = context.mediumLevelILFunction
+			return context.mediumLevelILFunction
 		case (
 			FunctionGraphType.LowLevelILFunctionGraph
 			| FunctionGraphType.LowLevelILSSAFormFunctionGraph
 			| FunctionGraphType.LiftedILFunctionGraph
 		):
-			function = context.lowLevelILFunction
-		case FunctionGraphType.NormalFunctionGraph:
-			function = context.function
-		case FunctionGraphType.InvalidILViewType:
-			function = None
-	return function
+			return context.lowLevelILFunction
+		case _:  # FunctionGraphType.NormalFunctionGraph | FunctionGraphType.InvalidILViewType
+			return None
 
 
 BAD_C_NAME_PATTERN = re.compile("[^a-zA-Z_0-9:]")

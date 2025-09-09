@@ -12,3 +12,4 @@ from . import remove_rettype
 from . import create_virtual_table
 from . import resolve_virtual_call
 from . import reset_function_highlight
+from . import jump_to_matching_assembly
