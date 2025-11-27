@@ -8,14 +8,15 @@ from .bnplugintools import PyToolsUIAction, get_action_manager
 class ConstFliperTask(BackgroundTaskThread):
 	def __init__(self, bv: binaryninja.BinaryView, variables: list[binaryninja.Variable]):
 		BackgroundTaskThread.__init__(self, "Running", True)
-		self.bv = bv
+		self.bv: binaryninja.BinaryView = bv
 		self.variables = variables
 
 	def run(self):
-		for var in self.variables:
-			mut_t = var.type.mutable_copy()
-			mut_t.const = False if mut_t.const else True
-			var.type = mut_t.immutable_copy()
+		with self.bv.undoable_transaction():
+			for var in self.variables:
+				mut_t = var.type.mutable_copy()
+				mut_t.const = False if mut_t.const else True
+				var.type = mut_t.immutable_copy()
 
 		self.bv.update_analysis_and_wait()
 

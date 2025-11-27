@@ -20,18 +20,50 @@ from ..core.PyQtTemplateCollection.widgets import ChooseDialog
 from .bnplugintools import PyToolsUIAction, get_action_manager
 
 import itertools
+import dataclasses
 
 
-def gather_exported_symbols(bv: binaryninja.BinaryView):
+@dataclasses.dataclass
+class ExportedEntity:
+	full_name: str
+	address: int
+	size: int
+
+
+def gather_exported_entities(bv: binaryninja.BinaryView) -> list[ExportedEntity]:
 	exports = list()
 	function_symbols = bv.get_symbols_of_type(SymbolType.FunctionSymbol)
 	data_symbols = bv.get_symbols_of_type(SymbolType.DataSymbol)
 
 	for sym in itertools.chain(function_symbols, data_symbols):
-		if sym.binding in (SymbolBinding.GlobalBinding, SymbolBinding.WeakBinding):
-			exports.append(sym)
+		if sym.binding not in (SymbolBinding.GlobalBinding, SymbolBinding.WeakBinding):
+			continue
+
+		match sym.type:
+			case SymbolType.FunctionSymbol:
+				exports.append(
+					ExportedEntity(sym.full_name, sym.address, size_of_function_at(bv, sym.address))
+				)
+
+			case SymbolType.DataSymbol:
+				exports.append(
+					ExportedEntity(
+						sym.full_name, sym.address, bv.get_data_var_at(sym.address).type.width
+					)
+				)
+
+			case _:
+				raise NotImplementedError
 
 	return exports
+
+
+def size_of_function(function: binaryninja.Function) -> int:
+	return sum([bb.end - bb.start for bb in function.basic_blocks])
+
+
+def size_of_function_at(bv: binaryninja.BinaryView, address: int) -> int:
+	return size_of_function(bv.get_function_at(address))
 
 
 class ShowExports(PyToolsUIAction):
@@ -45,12 +77,12 @@ class ShowExports(PyToolsUIAction):
 	def activate(self, context):
 		bv = context.binaryView or context.context.getCurrentView().getData()
 
-		symbols = gather_exported_symbols(bv)
+		exports = gather_exported_entities(bv)
 
 		chooser = ChooseDialog(
 			"Exported symbols",
-			["Name", "Address"],
-			[(sym.full_name, sym.address) for sym in symbols],
+			["Name", "Address", "Size"],
+			[(e.full_name, e.address, e.size) for e in exports],
 			parent=context.context.getCurrentView().widget(),
 		)
 

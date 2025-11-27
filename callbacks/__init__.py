@@ -13,3 +13,5 @@ from . import create_virtual_table
 from . import resolve_virtual_call
 from . import reset_function_highlight
 from . import jump_to_matching_assembly
+from . import outgoing_calls
+from . import functionwise_deadstore_elimination
